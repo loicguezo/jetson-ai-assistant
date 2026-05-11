@@ -1,0 +1,21 @@
+services:
+  gemma4-assistant:
+    container_name: gemma4-nvidia
+    image: ghcr.io/nvidia-ai-iot/llama_cpp:latest-jetson-orin
+    runtime: nvidia
+    command: >
+      llama-server
+      -hf unsloth/gemma-4-E2B-it-GGUF:Q4_K_S
+      --host 0.0.0.0
+      --port 8080
+    volumes:
+      - $HOME/.cache/huggingface:/root/.cache/huggingface
+    network_mode: "host"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
