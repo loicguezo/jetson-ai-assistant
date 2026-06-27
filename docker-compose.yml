@@ -1,21 +1,43 @@
 services:
-  gemma4-assistant:
-    container_name: gemma4-nvidia
-    image: ghcr.io/nvidia-ai-iot/llama_cpp:latest-jetson-orin
-    runtime: nvidia
-    command: >
-      llama-server
-      -hf unsloth/gemma-4-E2B-it-GGUF:Q4_K_S
-      --host 0.0.0.0
-      --port 8080
-    volumes:
-      - $HOME/.cache/huggingface:/root/.cache/huggingface
-    network_mode: "host"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    restart: unless-stopped
+    gemma4-assistant:
+        container_name: gemma4-nvidia
+        image: ghcr.io/nvidia-ai-iot/llama_cpp:latest-jetson-orin
+        runtime: nvidia
+        command: >
+            llama-server
+            -hf unsloth/gemma-4-E2B-it-GGUF:Q4_K_S
+            --host 0.0.0.0
+            --port 8080
+        volumes:
+            - $HOME/.cache/huggingface:/root/.cache/huggingface
+        network_mode: "host"
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: nvidia
+                          count: all
+                          capabilities: [gpu]
+        restart: unless-stopped
+
+    hermes:
+        image: nousresearch/hermes-agent:latest
+        container_name: hermes
+        restart: unless-stopped
+        command: gateway run
+        ports:
+            - "8642:8642" # gateway API
+            - "9119:9119" # dashboard (only reached when HERMES_DASHBOARD=1)
+        volumes:
+            - ~/.hermes:/opt/data
+        environment:
+            - HERMES_DASHBOARD=1
+            # Uncomment to forward specific env vars instead of using .env file:
+            # - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+            # - OPENAI_API_KEY=${OPENAI_API_KEY}
+            # - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+        deploy:
+            resources:
+                limits:
+                    memory: 4G
+                    cpus: "2.0"
